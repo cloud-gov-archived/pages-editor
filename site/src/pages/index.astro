@@ -1,0 +1,28 @@
+---
+import '../index.scss'
+import Layout from '../layouts/Layout.astro'
+
+const res = await fetch('http://localhost:3000/api/posts?draft=true')
+const posts = await res.json()
+
+const res2 = await fetch('http://localhost:3000/api/pages?draft=true')
+const pages = await res2.json()
+---
+
+<Layout>
+  {
+    posts.docs.map((post) => (
+      <a class="usa-link" href={'/posts/' + post.slug}>
+        <h2 set:html={post.title} />
+        <p set:html={post['Example Custom Field']} />
+      </a>
+    ))
+  }
+  {
+    pages.docs.map((page) => (
+      <a class="usa-link" href={page.slug}>
+        <h2 set:html={page.title} />
+      </a>
+    ))
+  }
+</Layout>
