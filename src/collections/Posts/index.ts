@@ -5,10 +5,8 @@ import { authenticated } from '../../access/authenticated'
 import { populateAuthors } from './hooks/populateAuthors'
 import { revalidateDelete, revalidatePost } from './hooks/revalidatePost'
 
+import { lexicalEditor, HTMLConverterFeature, lexicalHTML } from '@payloadcms/richtext-lexical';
 import { slugField } from '@/fields/slug'
-
-import { $convertToMarkdownString, TRANSFORMERS } from '@lexical/markdown';
-import { createHeadlessEditor } from '@lexical/headless';
 
 import { customFields } from './custom'
 
@@ -16,39 +14,16 @@ import { customFields } from './custom'
 export const previewWebhook: CollectionAfterChangeHook<Post> = async ({
   doc,
 }) => {
-  await fetch(process.env.PROMPT_URL || '', {
-    method: 'POST',
-  })
+  await fetch(process.env.PROMPT_URL || '')
   return doc
 }
-
-// function to extract markdown
-export const getTextEditorMarkdown = async (editorState) => {
-    try {
-        const editor = createHeadlessEditor({
-            nodes: [],
-            onError: () => {}
-        });
-        editor.setEditorState(editor.parseEditorState(editorState));
-
-        let markdown = '';
-        await editor.read(async () => {
-          markdown = await $convertToMarkdownString(TRANSFORMERS);
-        });
-        return markdown
-
-    } catch (e) {
-      console.error(e)
-        // error handling
-    }
-};
 
 export const Posts: CollectionConfig<'posts'> = {
   slug: 'posts',
   access: {
     create: authenticated,
     delete: authenticated,
-    read: authenticated,
+    read: () => true,
     update: authenticated,
   },
   // This config controls what's populated by default when a post is referenced
@@ -60,14 +35,16 @@ export const Posts: CollectionConfig<'posts'> = {
   },
   admin: {
     defaultColumns: ['title', 'slug', 'updatedAt'],
-    // livePreview: {
-    //   url: ({ data }) => {
-    //     return `${process.env.PREVIEW_URL}/join/${data.slug}`
-    //   },
-    // },
-    // preview: (data) => {
-    //   return `${process.env.PREVIEW_URL}/join/${data.slug}`
-    // },
+    livePreview: {
+      url: ({ data }) => {
+        // return `${process.env.PREVIEW_URL}/join/${data.slug}`
+        return `http://localhost:4321/posts/${data.slug}`
+      },
+    },
+    preview: (data) => {
+      // return `${process.env.PREVIEW_URL}/join/${data.slug}`
+      return `http://localhost:4321/posts/${data.slug}`
+    },
     useAsTitle: 'title',
   },
   fields: [
@@ -76,6 +53,18 @@ export const Posts: CollectionConfig<'posts'> = {
       type: 'text',
       required: true,
     },
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          // The HTMLConverter Feature is the feature which manages the HTML serializers. If you do not pass any arguments to it, it will use the default serializers.
+          HTMLConverterFeature({}),
+        ],
+      })
+    },
+    lexicalHTML('content', { name: 'content_html' }),
     {
       name: 'authors',
       type: 'relationship',
@@ -145,28 +134,5 @@ export const Posts: CollectionConfig<'posts'> = {
       },
     },
     maxPerDoc: 50,
-  },
-  endpoints: [
-    {
-      path: '/:id/markdown',
-      method: 'get',
-      handler: async (req) => {
-        const id: string = String(req.routeParams!.id);
-        const p = await req.payload.findByID({
-          collection: 'posts',
-          id,
-          draft: true,
-        })
-
-        await Promise.allSettled(Object.keys(p).map(async key => {
-          if (p[key] !== null && typeof p[key] === 'object' && p[key].hasOwnProperty('root')) {
-            p[key] = await getTextEditorMarkdown(p[key])
-          }
-        }));
-
-
-        return Response.json(p)
-      },
-    }
-  ]
+  }
 }
