@@ -22,6 +22,7 @@ export const previewWebhook: CollectionAfterChangeHook<Post> = async ({
   return doc
 }
 
+
 export const Posts: CollectionConfig<'posts'> = {
   slug: 'posts',
   access: {
