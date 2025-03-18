@@ -26,12 +26,11 @@ async function createPage(payload, tid, site, title) {
 describe('Pages access',  () => {
     test('admins can read all Pages',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        const pages = await Promise.all(sites.map(async site => {
+        await Promise.all(sites.map(async site => {
             return createPage(payload, tid, site, 'New Page')
         }))
 
         const [site1, _] = sites
-        const [page1, page2] = pages
 
         const user = await create(payload, tid, {
             collection: 'users',
@@ -54,12 +53,11 @@ describe('Pages access',  () => {
 
     test('site users can read their Pages only',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        const pages = await Promise.all(sites.map(async site => {
+        await Promise.all(sites.map(async site => {
             return createPage(payload, tid, site, 'New Page')
         }))
 
         const [site1, _] = sites
-        const [page1, page2] = pages
 
         const user = await create(payload, tid, {
             collection: 'users',
@@ -79,5 +77,29 @@ describe('Pages access',  () => {
 
         expect(foundPages.docs).toHaveLength(1)
         expect(foundPages.docs[0]).toHaveProperty('site.name', site1.name)
+    })
+
+    test('site users can only read if a site is selected',  async ({ tid }) => {
+        const sites = await createSites(payload, tid, ['site1', 'site2'])
+        await Promise.all(sites.map(async site => {
+            return createPage(payload, tid, site, 'New Page')
+        }))
+
+        const [site1, _] = sites
+
+        const user = await create(payload, tid, {
+            collection: 'users',
+            data: {
+                email: 'user@example.gov',
+                sites: [{
+                    site: site1,
+                    role: 'user'
+                }],
+            }
+        })
+
+        expect(find(payload, tid, {
+            collection: 'pages'
+        }, user)).rejects.toThrowError('You are not allowed to perform this action')
     })
 })
