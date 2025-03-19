@@ -3,17 +3,6 @@ import { create, find, setUserSite } from '@test/utils/localHelpers';
 import { test } from '@test/utils/test'
 import { roles } from '@/collections/Users'
 
-async function createSites(payload, tid, names: string[]) {
-    return Promise.all(names.map(async name => {
-        return create(payload, tid, {
-            collection: 'sites',
-            data: {
-                name
-            },
-        })
-    }))
-}
-
 async function createUser(payload, tid, site, role) {
     return create(payload, tid, {
         collection: 'users',
@@ -28,8 +17,8 @@ async function createUser(payload, tid, site, role) {
 }
 
 describe('Users access',  () => {
-    test('admins can read all Users',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
+    test('admins can read all Users', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
         // should create (sites.length * roles.length) users
         // in total there will be (sites.length * (roles.length + 1))
         // because each site automatically creates a bot user
@@ -55,13 +44,15 @@ describe('Users access',  () => {
         await setUserSite(payload, tid, user, site1)
 
         const foundUsers = await find(payload, tid, {
-            collection: 'users'
+            collection: 'users',
+            limit: 100
         }, user)
+
         expect(foundUsers.docs).toHaveLength(sites.length * (roles.length + 1) + 1)
     })
 
-    test('site users can read their users only',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
+    test('site users can read their users only', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
         await Promise.all(sites.map(async site => {
             return Promise.all(roles.map(async role => {
                 return createUser(payload, tid, site, role)
@@ -92,8 +83,8 @@ describe('Users access',  () => {
         })
     })
 
-    test('site users can only read if a site is selected',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
+    test('site users can only read if a site is selected', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 

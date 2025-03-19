@@ -2,20 +2,9 @@ import { expect, describe } from 'vitest'
 import { create, find, setUserSite } from '@test/utils/localHelpers';
 import { test } from '@test/utils/test'
 
-async function createSites(payload, tid, names: string[]) {
-    return Promise.all(names.map(async name => {
-        return create(payload, tid, {
-            collection: 'sites',
-            data: {
-                name
-            },
-        })
-    }))
-}
-
 describe('Sites access',  () => {
-    test('admins can read all Sites',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
+    test('admins can read all Sites', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 
@@ -38,8 +27,8 @@ describe('Sites access',  () => {
         expect(foundSites.docs).toHaveLength(sites.length)
     })
 
-    test('site users can read their Site only',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
+    test('site users can read their Site only', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 
@@ -63,8 +52,8 @@ describe('Sites access',  () => {
         expect(foundSites.docs[0]).toHaveProperty('name', site1.name)
     })
 
-    test('site users can only read if a site is selected',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
+    test('site users can only read if a site is selected', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 

@@ -1,5 +1,5 @@
 import { User, Site } from "@/payload-types"
-import { BasePayload, CollectionSlug, SelectType } from "payload"
+import { BasePayload, CollectionSlug, PayloadRequest, SelectType } from "payload"
 import type { Options as CreateOptions } from "node_modules/payload/dist/collections/operations/local/create"
 import type { Options as FindOptions } from "node_modules/payload/dist/collections/operations/local/find"
 
@@ -8,10 +8,13 @@ const siteKey = 'site-key'
 // TODO: generalize these functions for other local methods; it's hard to type
 export async function create<TSlug extends CollectionSlug, TSelect extends SelectType>(
     payload: BasePayload,
-    tid: string | number,
+    tid: string | number | undefined,
     options: CreateOptions<TSlug, TSelect>,
     user?: User) {
-    let localOptions = { ...options, req: { transactionID: tid } }
+    let localOptions = { ...options }
+    if (tid) {
+       localOptions = { ...localOptions, req: { transactionID: tid } }
+    }
     if (user) {
         localOptions = { ...localOptions, overrideAccess: false, user }
     }
@@ -21,10 +24,13 @@ export async function create<TSlug extends CollectionSlug, TSelect extends Selec
 
 export async function find<TSlug extends CollectionSlug, TSelect extends SelectType>(
     payload: BasePayload,
-    tid: string | number,
+    tid: string | number | undefined,
     options: FindOptions<TSlug, TSelect>,
     user?: User) {
-    let localOptions = { ...options, req: { transactionID: tid } }
+    let localOptions = { ...options }
+    if (tid) {
+       localOptions = { ...localOptions, req: { transactionID: tid } }
+    }
     if (user) {
         localOptions = { ...localOptions, overrideAccess: false, user }
     }
@@ -38,6 +44,15 @@ export async function setUserSite(
     user: User,
     site: Site,
 ) {
+
+    let req: Partial<PayloadRequest> = {
+      user: { ...user, collection: 'users' }
+    }
+
+    if (tid) {
+      req = { ...req, transactionID: tid }
+    }
+
     return payload.create({
         collection: 'payload-preferences',
         data: {
@@ -48,9 +63,6 @@ export async function setUserSite(
           },
           value: site.id
         },
-        req: {
-          transactionID: tid,
-          user: { ...user, collection: 'users' }
-        },
+        req
       })
 }

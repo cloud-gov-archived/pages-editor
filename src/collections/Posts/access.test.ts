@@ -24,11 +24,8 @@ async function createPage(payload, tid, site, title) {
 }
 
 describe('Posts access',  () => {
-    test('admins can read all Posts',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
-        const posts = await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
+    test('admins can read all Posts',  async ({ transactions, payload, sites, posts }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 
@@ -51,11 +48,8 @@ describe('Posts access',  () => {
         expect(foundPosts.docs).toHaveLength(posts.length)
     })
 
-    test('site users can read their Posts only',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
-        await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
+    test('site users can read their Posts only', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 
@@ -79,11 +73,8 @@ describe('Posts access',  () => {
         expect(foundPosts.docs[0]).toHaveProperty('site.name', site1.name)
     })
 
-    test('site users can only read if a site is selected',  async ({ tid }) => {
-        const sites = await createSites(payload, tid, ['site1', 'site2'])
-        await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
+    test('site users can only read if a site is selected', async ({ transactions, payload, sites }) => {
+        const tid = transactions.get('tid') ?? 1
 
         const [site1] = sites
 

@@ -1,3 +1,6 @@
+import { Site, Post } from '@/payload-types'
+import { BasePayload } from 'payload'
+
 export interface LocalTestContext {
-    tid: string | number
+    transactions: Map<string, string | number>
 }
