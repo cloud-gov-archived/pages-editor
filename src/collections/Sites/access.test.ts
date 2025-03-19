@@ -13,22 +13,9 @@ async function createSites(payload, tid, names: string[]) {
     }))
 }
 
-async function createPage(payload, tid, site, title) {
-    return create(payload, tid, {
-        collection: 'pages',
-        data: {
-            title,
-            site
-        }
-    })
-}
-
-describe('Pages access',  () => {
-    test('admins can read all Pages',  async ({ tid }) => {
+describe('Sites access',  () => {
+    test('admins can read all Sites',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        const pages = await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
 
         const [site1] = sites
 
@@ -45,17 +32,14 @@ describe('Pages access',  () => {
         })
         await setUserSite(payload, tid, user, site1)
 
-        const foundPages = await find(payload, tid, {
-            collection: 'pages'
+        const foundSites = await find(payload, tid, {
+            collection: 'sites'
         }, user)
-        expect(foundPages.docs).toHaveLength(pages.length)
+        expect(foundSites.docs).toHaveLength(sites.length)
     })
 
-    test('site users can read their Pages only',  async ({ tid }) => {
+    test('site users can read their Site only',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
 
         const [site1] = sites
 
@@ -71,19 +55,16 @@ describe('Pages access',  () => {
         })
         await setUserSite(payload, tid, user, site1)
 
-        const foundPages = await find(payload, tid, {
-            collection: 'pages'
+        const foundSites = await find(payload, tid, {
+            collection: 'sites'
         }, user)
 
-        expect(foundPages.docs).toHaveLength(1)
-        expect(foundPages.docs[0]).toHaveProperty('site.name', site1.name)
+        expect(foundSites.docs).toHaveLength(1)
+        expect(foundSites.docs[0]).toHaveProperty('name', site1.name)
     })
 
     test('site users can only read if a site is selected',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
 
         const [site1] = sites
 
@@ -99,7 +80,7 @@ describe('Pages access',  () => {
         })
 
         await expect(find(payload, tid, {
-            collection: 'pages'
+            collection: 'sites'
         }, user)).rejects.toThrowError('You are not allowed to perform this action')
     })
 })

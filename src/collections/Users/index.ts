@@ -30,8 +30,9 @@ const addSub: CollectionBeforeChangeHook<User> = async ({
 }
 
 const testEmailUniqueness: FieldHook<User> = async({
-  data, originalDoc, req: { payload, user }, value, operation
+  data, originalDoc, req, value, operation
 }) => {
+  const { payload, user } = req
   if (operation === 'create' || operation == 'update')
   // if value is unchanged, skip validation
   if (originalDoc?.email === value) {
@@ -59,7 +60,7 @@ const testEmailUniqueness: FieldHook<User> = async({
     }
     // if the user matches the current site, this is a true validation error
     // if the user exists but on another site, treat this essentially like a new user
-    const siteId = await getSiteId(payload, user.id)
+    const siteId = await getSiteId(req, user.id)
     if (siteId && existingUser.sites.map(s => (s.site as Site).id).includes(siteId)) {
       throw new ValidationError({
         errors: [{

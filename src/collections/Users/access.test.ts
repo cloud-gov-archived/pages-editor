@@ -1,6 +1,7 @@
 import { expect, describe } from 'vitest'
 import { create, find, setUserSite } from '@test/utils/localHelpers';
 import { test } from '@test/utils/test'
+import { roles } from '@/collections/Users'
 
 async function createSites(payload, tid, names: string[]) {
     return Promise.all(names.map(async name => {
@@ -13,21 +14,29 @@ async function createSites(payload, tid, names: string[]) {
     }))
 }
 
-async function createPage(payload, tid, site, title) {
+async function createUser(payload, tid, site, role) {
     return create(payload, tid, {
-        collection: 'pages',
+        collection: 'users',
         data: {
-            title,
-            site
+            email: `${site.name}-${role}@example.gov`,
+            sites: [{
+                site,
+                role
+            }]
         }
     })
 }
 
-describe('Pages access',  () => {
-    test('admins can read all Pages',  async ({ tid }) => {
+describe('Users access',  () => {
+    test('admins can read all Users',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        const pages = await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
+        // should create (sites.length * roles.length) users
+        // in total there will be (sites.length * (roles.length + 1))
+        // because each site automatically creates a bot user
+        await Promise.all(sites.map(async site => {
+            return Promise.all(roles.map(async role => {
+                return createUser(payload, tid, site, role)
+            }))
         }))
 
         const [site1] = sites
@@ -45,16 +54,18 @@ describe('Pages access',  () => {
         })
         await setUserSite(payload, tid, user, site1)
 
-        const foundPages = await find(payload, tid, {
-            collection: 'pages'
+        const foundUsers = await find(payload, tid, {
+            collection: 'users'
         }, user)
-        expect(foundPages.docs).toHaveLength(pages.length)
+        expect(foundUsers.docs).toHaveLength(sites.length * (roles.length + 1) + 1)
     })
 
-    test('site users can read their Pages only',  async ({ tid }) => {
+    test('site users can read their users only',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
         await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
+            return Promise.all(roles.map(async role => {
+                return createUser(payload, tid, site, role)
+            }))
         }))
 
         const [site1] = sites
@@ -71,19 +82,18 @@ describe('Pages access',  () => {
         })
         await setUserSite(payload, tid, user, site1)
 
-        const foundPages = await find(payload, tid, {
-            collection: 'pages'
+        const foundUsers = await find(payload, tid, {
+            collection: 'users'
         }, user)
 
-        expect(foundPages.docs).toHaveLength(1)
-        expect(foundPages.docs[0]).toHaveProperty('site.name', site1.name)
+        expect(foundUsers.docs).toHaveLength(roles.length + 2)
+        foundUsers.docs.forEach(foundUser => {
+            expect(foundUser.sites[0]).toHaveProperty('site.name', site1.name)
+        })
     })
 
     test('site users can only read if a site is selected',  async ({ tid }) => {
         const sites = await createSites(payload, tid, ['site1', 'site2'])
-        await Promise.all(sites.map(async site => {
-            return createPage(payload, tid, site, 'New Page')
-        }))
 
         const [site1] = sites
 
@@ -99,7 +109,7 @@ describe('Pages access',  () => {
         })
 
         await expect(find(payload, tid, {
-            collection: 'pages'
+            collection: 'users'
         }, user)).rejects.toThrowError('You are not allowed to perform this action')
     })
 })
