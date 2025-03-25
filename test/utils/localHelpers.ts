@@ -2,6 +2,9 @@ import { User, Site } from "@/payload-types"
 import { BasePayload, CollectionSlug, PayloadRequest, SelectType } from "payload"
 import type { Options as CreateOptions } from "node_modules/payload/dist/collections/operations/local/create"
 import type { Options as FindOptions } from "node_modules/payload/dist/collections/operations/local/find"
+import type { Options as FindByIdOptions } from "node_modules/payload/dist/collections/operations/local/findByID"
+import type { ByIDOptions as UpdateOptions } from "node_modules/payload/dist/collections/operations/local/update"
+import type { ByIDOptions as DeleteOptions } from "node_modules/payload/dist/collections/operations/local/delete"
 
 const siteKey = 'site-key'
 
@@ -36,6 +39,54 @@ export async function find<TSlug extends CollectionSlug, TSelect extends SelectT
     }
 
   return payload.find(localOptions)
+}
+
+export async function findByID<TSlug extends CollectionSlug, TDisableErrors extends boolean, TSelect extends SelectType>(
+  payload: BasePayload,
+  tid: string | number | undefined,
+  options: FindByIdOptions<TSlug, TDisableErrors, TSelect>,
+  user?: User) {
+  let localOptions = { ...options }
+  if (tid) {
+     localOptions = { ...localOptions, req: { transactionID: tid } }
+  }
+  if (user) {
+      localOptions = { ...localOptions, overrideAccess: false, user }
+  }
+
+  return payload.findByID(localOptions)
+}
+
+export async function update<TSlug extends CollectionSlug, TSelect extends SelectType>(
+  payload: BasePayload,
+  tid: string | number | undefined,
+  options: UpdateOptions<TSlug, TSelect>,
+  user?: User) {
+  let localOptions = { ...options }
+  if (tid) {
+     localOptions = { ...localOptions, req: { transactionID: tid } }
+  }
+  if (user) {
+      localOptions = { ...localOptions, overrideAccess: false, user }
+  }
+
+  return payload.update(localOptions)
+}
+
+export async function del<TSlug extends CollectionSlug, TSelect extends SelectType>(
+  payload: BasePayload,
+  tid: string | number | undefined,
+  options: DeleteOptions<TSlug, TSelect>,
+  user?: User) {
+  let localOptions = { ...options }
+  if (tid) {
+     localOptions = { ...localOptions, req: { transactionID: tid } }
+  }
+  if (user) {
+      localOptions = { ...localOptions, overrideAccess: false, user }
+  }
+
+  return payload.delete(localOptions)
 }
 
 export async function setUserSite(

@@ -78,7 +78,7 @@ export const Pages: CollectionConfig<'pages'> = {
     ...slugField(),
   ],
   hooks: {
-    afterChange: [revalidatePage, previewWebhook],
+    afterChange: [revalidatePage, /* previewWebhook */],
     beforeChange: [populatePublishedAt, addSite],
     beforeDelete: [revalidateDelete],
   },
