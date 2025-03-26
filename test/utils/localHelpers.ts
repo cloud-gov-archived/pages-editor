@@ -89,11 +89,16 @@ export async function del<TSlug extends CollectionSlug, TSelect extends SelectTy
   return payload.delete(localOptions)
 }
 
+const siteIdHelper = (site: Site | number) => {
+  if (typeof site === 'number') return site
+  return site.id
+}
+
 export async function setUserSite(
     payload: BasePayload,
     tid: string | number,
     user: User,
-    site: Site,
+    site: Site | number,
 ) {
 
     let req: Partial<PayloadRequest> = {
@@ -112,7 +117,7 @@ export async function setUserSite(
             relationTo: 'users',
             value: user.id
           },
-          value: site.id
+          value: siteIdHelper(site)
         },
         req
       })

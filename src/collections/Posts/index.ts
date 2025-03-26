@@ -127,7 +127,7 @@ export const Posts: CollectionConfig<'posts'> = {
     ...customFields,
   ],
   hooks: {
-    afterChange: [revalidatePost, previewWebhook],
+    afterChange: [revalidatePost, /* previewWebhook */],
     afterRead: [populateAuthors],
     afterDelete: [revalidateDelete],
     beforeChange: [addSite]

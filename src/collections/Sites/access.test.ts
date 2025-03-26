@@ -1,75 +1,129 @@
 import { expect, describe } from 'vitest'
-import { create, find, setUserSite } from '@test/utils/localHelpers';
-import { test } from '@test/utils/test'
+import { create, find, findByID, update, del, setUserSite } from '@test/utils/localHelpers';
+import { test } from '@test/utils/test';
+import { Site } from '@/payload-types';
+
+const isAccessError = async (fnCall) => {
+    await expect(fnCall)
+    .rejects
+    .toThrowError('You are not allowed to perform this action')
+}
+
+const getSiteId = (site: Site | number) => {
+    if (typeof site === 'number') return site
+    return site.id
+}
 
 describe('Sites access',  () => {
-    test('admins can read all Sites', async ({ transactions, payload, sites }) => {
-        const tid = transactions.get('tid') ?? 1
+    describe('admins can...', async () => {
+        test.scoped({ defaultUserAdmin: true })
 
-        const [site1] = sites
-
-        const user = await create(payload, tid, {
-            collection: 'users',
-            data: {
-                email: 'admin@example.gov',
-                sites: [{
-                    site: site1,
-                    role: 'manager'
-                }],
-                isAdmin: true
-            }
+        test('read all Sites', async ({ tid, testUser, sites }) => {
+            const foundSites = await find(payload, tid, {
+                collection: 'sites'
+            }, testUser)
+            expect(foundSites.docs).toHaveLength(sites.length)
         })
-        await setUserSite(payload, tid, user, site1)
 
-        const foundSites = await find(payload, tid, {
-            collection: 'sites'
-        }, user)
-        expect(foundSites.docs).toHaveLength(sites.length)
+        test('create a new Site', async ({ tid, testUser }) => {
+            const site = await create(payload, tid, {
+                collection: 'sites',
+                data: {
+                    name: 'A New Site',
+                }
+            }, testUser)
+
+            expect(site).toBeTruthy()
+        })
+
+        test('update any Site', async ({ tid, testUser, sites }) => {
+            const newSites = await Promise.all(sites.map(async site => {
+                return update(payload, tid, {
+                    collection: 'sites',
+                    id: site.id,
+                    data: {
+                        name: `${site.name} (Edited)`,
+                    }
+                }, testUser)
+
+            }))
+
+            newSites.forEach(site => {
+                expect(site.name).toContain('Edited')
+            })
+
+        })
+
+        test('delete any Site', async ({ tid, testUser, sites }) => {
+            await Promise.all(sites.map(async site => {
+                return del(payload, tid, {
+                    collection: 'sites',
+                    id: site.id,
+                }, testUser)
+
+            }))
+
+            const foundSites = await find(payload, tid, {
+                collection: 'sites'
+            })
+            expect(foundSites.docs.length).toBe(0)
+        })
     })
 
-    test('site users can read their Site only', async ({ transactions, payload, sites }) => {
-        const tid = transactions.get('tid') ?? 1
+    describe('site users can...', async () => {
+        // TODO: this is a bug in https://github.com/vitest-dev/vitest/pull/7233
+        test.scoped({ defaultUserAdmin: false })
 
-        const [site1] = sites
-
-        const user = await create(payload, tid, {
-            collection: 'users',
-            data: {
-                email: 'user@example.gov',
-                sites: [{
-                    site: site1,
-                    role: 'user'
-                }],
-            }
-        })
-        await setUserSite(payload, tid, user, site1)
-
-        const foundSites = await find(payload, tid, {
-            collection: 'sites'
-        }, user)
-
-        expect(foundSites.docs).toHaveLength(1)
-        expect(foundSites.docs[0]).toHaveProperty('name', site1.name)
-    })
-
-    test('site users can only read if a site is selected', async ({ transactions, payload, sites }) => {
-        const tid = transactions.get('tid') ?? 1
-
-        const [site1] = sites
-
-        const user = await create(payload, tid, {
-            collection: 'users',
-            data: {
-                email: 'user@example.gov',
-                sites: [{
-                    site: site1,
-                    role: 'user'
-                }],
-            }
+        test('read their Sites', async ({ tid, testUser }) => {
+            const siteId = getSiteId(testUser.sites[0].site)
+            const foundSites = await find(payload, tid, {
+                collection: 'sites'
+            }, testUser)
+            expect(foundSites.docs).toHaveLength(1)
+            expect(foundSites.docs[0].id).toBe(siteId)
         })
 
-        await expect(find(payload, tid, {
-            collection: 'sites'
-        }, user)).rejects.toThrowError('You are not allowed to perform this action')
+        test('not read not-their Sites', async ({ tid, testUser, sites }) => {
+            const notTheirSites = sites.filter(site => {
+                site.id !== getSiteId(testUser.sites[0].site)
+            })
+
+            notTheirSites.forEach(site => {
+                isAccessError(findByID(payload, tid, {
+                    collection: 'sites',
+                    id: site.id
+                }, testUser))
+            })
+        })
+
+        test('not create new Sites', async ({ tid, testUser }) => {
+            await isAccessError(create(payload, tid, {
+                collection: 'sites',
+                data: {
+                    name: 'A New Site'
+                }
+            }, testUser))
+        })
+
+        test('not update Sites', async ({ tid, testUser }) => {
+            const siteId = getSiteId(testUser.sites[0].site)
+
+            await isAccessError(update(payload, tid, {
+                collection: 'sites',
+                id: siteId,
+                data: {
+                    name: 'A New Site (Updated)'
+                }
+            }, testUser))
+        })
+
+        test('not delete Sites', async ({ tid, testUser }) => {
+            const siteId = getSiteId(testUser.sites[0].site)
+
+            await isAccessError(del(payload, tid, {
+                collection: 'sites',
+                id: siteId,
+            }, testUser))
+        })
     })
 })

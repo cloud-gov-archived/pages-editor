@@ -86,9 +86,9 @@ export const Users: CollectionConfig = {
   slug: 'users',
   access: {
     read: getAdminOrSiteUser('users'),
-    // update: getAdminOrSiteUser('users'), // TODO: update to admin/sitemanager
-    // delete: getAdminOrSiteUser('users'), // TODO: update to admin/sitemanager
-    // create: getAdminOrSiteUser('users'), // TODO: update to admin/sitemanager
+    update: getAdminOrSiteUser('users', true),
+    delete: getAdminOrSiteUser('users', true),
+    create: getAdminOrSiteUser('users', true),
   },
   admin: {
     defaultColumns: ['email', 'updatedAt', 'sites'],

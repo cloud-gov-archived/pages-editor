@@ -6,7 +6,12 @@ import { getSiteId } from './preferenceHelper'
 // certain access operations don't pass `data` which is the only
 // way to infer the shape of the documents we're operating on
 
-export function getAdminOrSiteUser(slug: CollectionSlug) {
+const siteIdHelper = (site: Site | number) => {
+  if (typeof site === 'number') return site
+  return site.id
+}
+
+export function getAdminOrSiteUser(slug: CollectionSlug, managerCheck = false) {
   const adminOrSiteUser: Access<Post | Page | User | Site > = async ({ req, data }) => {
     const { user, payload } = req;
     if (!user) return false
@@ -14,6 +19,10 @@ export function getAdminOrSiteUser(slug: CollectionSlug) {
 
     const siteId = await getSiteId(req, user.id)
     if (!siteId) return false
+    if (managerCheck) {
+      const matchedSite = user.sites.find(site => siteIdHelper(site.site) === siteId)
+      if (!(matchedSite && matchedSite.role === 'manager')) return false
+    }
 
     // if collection data exists, extract the site id and match against it
     // false for no match.
