@@ -206,4 +206,62 @@ describe('Posts access',  () => {
             })
         })
     })
+
+    describe('bots can...', async () => {
+        test.scoped({ defaultUserAdmin: false, defaultUserRole: 'bot' })
+
+        test('read their Posts', async ({ tid, testUser, posts }) => {
+            const foundPosts = await find(payload, tid, {
+                collection: 'posts'
+            }, testUser)
+            expect(foundPosts.docs).toHaveLength(1)
+            expect(getSiteId(foundPosts.docs[0].site)).toStrictEqual(getSiteId(testUser.sites[0].site))
+        })
+
+        test('not read not-their Posts', async ({ tid, testUser, posts }) => {
+            const notTheirPosts = posts.filter(post => {
+                getSiteId(post.site) !== getSiteId(testUser.sites[0].site)
+            })
+
+            notTheirPosts.forEach(post => {
+                isAccessError(findByID(payload, tid, {
+                    collection: 'posts',
+                    id: post.id
+                }, testUser))
+            })
+        })
+
+        test('not write a Post', async ({ tid, testUser, sites }) => {
+            sites.forEach(site => {
+                isAccessError(create(payload, tid, {
+                    collection: 'posts',
+                    data: {
+                        title: `${site.name} - Title`,
+                        site,
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not update Posts', async ({ tid, testUser, posts }) => {
+            posts.forEach(post => {
+                isAccessError(update(payload, tid, {
+                    collection: 'posts',
+                    id: post.id,
+                    data: {
+                        title: `${post.title} (Edited)`,
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not delete Posts', async ({ tid, testUser, posts }) => {
+            posts.forEach(post => {
+                isAccessError(del(payload, tid, {
+                    collection: 'posts',
+                    id: post.id
+                }, testUser))
+            })
+        })
+    })
 })

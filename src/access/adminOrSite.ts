@@ -11,7 +11,9 @@ const siteIdHelper = (site: Site | number) => {
   return site.id
 }
 
-export function getAdminOrSiteUser(slug: CollectionSlug, managerCheck = false) {
+type Role = User["sites"][number]["role"]
+
+export function getAdminOrSiteUser(slug: CollectionSlug, requiredRole: Role[] = ['manager', 'user']) {
   const adminOrSiteUser: Access<Post | Page | User | Site > = async ({ req, data }) => {
     const { user, payload } = req;
     if (!user) return false
@@ -19,10 +21,8 @@ export function getAdminOrSiteUser(slug: CollectionSlug, managerCheck = false) {
 
     const siteId = await getSiteId(req, user.id)
     if (!siteId) return false
-    if (managerCheck) {
-      const matchedSite = user.sites.find(site => siteIdHelper(site.site) === siteId)
-      if (!(matchedSite && matchedSite.role === 'manager')) return false
-    }
+    const matchedSite = user.sites.find(site => siteIdHelper(site.site) === siteId)
+    if (!(matchedSite && requiredRole.includes(matchedSite.role))) return false
 
     // if collection data exists, extract the site id and match against it
     // false for no match.

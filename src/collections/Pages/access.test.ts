@@ -206,4 +206,62 @@ describe('Pages access',  () => {
             })
         })
     })
+
+    describe('bots can...', async () => {
+        test.scoped({ defaultUserAdmin: false, defaultUserRole: 'bot' })
+
+        test('read their Pages', async ({ tid, testUser, pages }) => {
+            const foundPages = await find(payload, tid, {
+                collection: 'pages'
+            }, testUser)
+            expect(foundPages.docs).toHaveLength(1)
+            expect(getSiteId(foundPages.docs[0].site)).toStrictEqual(getSiteId(testUser.sites[0].site))
+        })
+
+        test('not read not-their Pages', async ({ tid, testUser, pages }) => {
+            const notTheirPages = pages.filter(page => {
+                getSiteId(page.site) !== getSiteId(testUser.sites[0].site)
+            })
+
+            notTheirPages.forEach(page => {
+                isAccessError(findByID(payload, tid, {
+                    collection: 'pages',
+                    id: page.id
+                }, testUser))
+            })
+        })
+
+        test('not write a Page', async ({ tid, testUser, sites }) => {
+            sites.forEach(site => {
+                isAccessError(create(payload, tid, {
+                    collection: 'pages',
+                    data: {
+                        title: `${site.name} - Title`,
+                        site,
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not update Pages', async ({ tid, testUser, pages }) => {
+            pages.forEach(page => {
+                isAccessError(update(payload, tid, {
+                    collection: 'pages',
+                    id: page.id,
+                    data: {
+                        title: `${page.title} (Edited)`,
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not delete Pages', async ({ tid, testUser, pages }) => {
+            pages.forEach(page => {
+                isAccessError(del(payload, tid, {
+                    collection: 'pages',
+                    id: page.id
+                }, testUser))
+            })
+        })
+    })
 })

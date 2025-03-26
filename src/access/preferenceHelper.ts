@@ -1,7 +1,12 @@
-import { PayloadPreference, User } from "@/payload-types";
+import { User, Site } from "@/payload-types";
 import { PayloadRequest } from "payload";
 
 const siteKey = 'site-key'
+
+const siteIdHelper = (site: Site | number) => {
+  if (typeof site === 'number') return site
+  return site.id
+}
 
 //  we need to check against the "selected" site from user preferences
 // TODO: this will become easier after https://github.com/payloadcms/payload/pull/9511
@@ -34,4 +39,20 @@ export async function getSiteId (req: PayloadRequest, userId: number): Promise<n
         req
       })
      return siteIds.docs.length ? siteIds.docs[0].value as number : undefined
+}
+
+export async function setUserSite(req: PayloadRequest, user: User, site: Site | number) {
+    const { payload } = req;
+    return payload.create({
+        collection: 'payload-preferences',
+        data: {
+          key: siteKey,
+          user: {
+            relationTo: 'users',
+            value: user.id
+          },
+          value: siteIdHelper(site)
+        },
+        req
+      })
 }

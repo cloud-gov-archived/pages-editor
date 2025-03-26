@@ -290,4 +290,56 @@ describe('Users access',  () => {
             }))
         })
     })
+
+    describe('bots can...', async () => {
+        test.scoped({ defaultUserAdmin: false, defaultUserRole: 'bot' })
+
+        test('not read Users', async ({ tid, testUser, users }) => {
+            users.forEach(user => {
+                isAccessError(findByID(payload, tid, {
+                    collection: 'users',
+                    id: user.id
+                }, testUser))
+            })
+        })
+
+        test('not create a User', async ({ tid, testUser, sites }) => {
+            sites.forEach(site => {
+                isAccessError(create(payload, tid, {
+                    collection: 'users',
+                    data: {
+                        email: `newuser@${site.name}.gov`,
+                        sites: [{
+                            site,
+                            role: 'user'
+                        }],
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not update a User', async ({ tid, testUser, users }) => {
+            users.forEach(user => {
+                isAccessError(update(payload, tid, {
+                    collection: 'users',
+                    id: user.id,
+                    data: {
+                        sites: [{
+                            site: user.sites[0].site,
+                            role: 'manager'
+                        }],
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not delete a User', async ({ tid, testUser, users }) => {
+            return Promise.all(users.map(async user => {
+                return isAccessError(del(payload, tid, {
+                    collection: 'users',
+                    id: user.id
+                }, testUser))
+            }))
+        })
+    })
 })

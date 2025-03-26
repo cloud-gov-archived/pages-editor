@@ -126,4 +126,59 @@ describe('Sites access',  () => {
             }, testUser))
         })
     })
+
+    describe('bots can...', async () => {
+        test.scoped({ defaultUserAdmin: false, defaultUserRole: 'bot' })
+
+        test('read their Sites', async ({ tid, testUser, sites }) => {
+            const foundSites = await find(payload, tid, {
+                collection: 'sites'
+            }, testUser)
+            expect(foundSites.docs).toHaveLength(1)
+            expect(foundSites.docs[0].id).toStrictEqual(getSiteId(testUser.sites[0].site))
+        })
+
+        test('not read not-their Sites', async ({ tid, testUser, sites }) => {
+            const notTheirSites = sites.filter(site => {
+                site.id !== getSiteId(testUser.sites[0].site)
+            })
+
+            notTheirSites.forEach(site => {
+                isAccessError(findByID(payload, tid, {
+                    collection: 'sites',
+                    id: site.id
+                }, testUser))
+            })
+        })
+
+        test('not write a Site', async ({ tid, testUser, sites }) => {
+            isAccessError(create(payload, tid, {
+                collection: 'sites',
+                data: {
+                    name: 'A New Site'
+                }
+            }, testUser))
+        })
+
+        test('not update Sites', async ({ tid, testUser, sites }) => {
+            sites.forEach(site => {
+                isAccessError(update(payload, tid, {
+                    collection: 'sites',
+                    id: site.id,
+                    data: {
+                        name: `${site.name} (Edited)`,
+                    }
+                }, testUser))
+            })
+        })
+
+        test('not delete Sites', async ({ tid, testUser, sites }) => {
+            sites.forEach(site => {
+                isAccessError(del(payload, tid, {
+                    collection: 'sites',
+                    id: site.id
+                }, testUser))
+            })
+        })
+    })
 })

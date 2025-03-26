@@ -17,7 +17,7 @@ export const Pages: CollectionConfig<'pages'> = {
   access: {
     create: getAdminOrSiteUser('pages'),
     delete: getAdminOrSiteUser('pages'),
-    read: getAdminOrSiteUser('pages'),
+    read: getAdminOrSiteUser('pages', ['manager', 'user', 'bot']),
     update: getAdminOrSiteUser('pages'),
   },
   // This config controls what's populated by default when a page is referenced
