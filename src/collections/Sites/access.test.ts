@@ -1,18 +1,9 @@
 import { expect, describe } from 'vitest'
 import { create, find, findByID, update, del, setUserSite } from '@test/utils/localHelpers';
 import { test } from '@test/utils/test';
-import { Site } from '@/payload-types';
+import { siteIdHelper } from '@/utilities/idHelper';
+import { isAccessError } from '@test/utils/errors';
 
-const isAccessError = async (fnCall) => {
-    await expect(fnCall)
-    .rejects
-    .toThrowError('You are not allowed to perform this action')
-}
-
-const getSiteId = (site: Site | number) => {
-    if (typeof site === 'number') return site
-    return site.id
-}
 
 describe('Sites access',  () => {
     describe('admins can...', async () => {
@@ -75,7 +66,7 @@ describe('Sites access',  () => {
         test.scoped({ defaultUserAdmin: false })
 
         test('read their Sites', async ({ tid, testUser }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
             const foundSites = await find(payload, tid, {
                 collection: 'sites'
             }, testUser)
@@ -85,15 +76,15 @@ describe('Sites access',  () => {
 
         test('not read not-their Sites', async ({ tid, testUser, sites }) => {
             const notTheirSites = sites.filter(site => {
-                site.id !== getSiteId(testUser.sites[0].site)
+                site.id !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirSites.forEach(site => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(notTheirSites.map(async site => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'sites',
                     id: site.id
                 }, testUser))
-            })
+            }))
         })
 
         test('not create new Sites', async ({ tid, testUser }) => {
@@ -106,7 +97,7 @@ describe('Sites access',  () => {
         })
 
         test('not update Sites', async ({ tid, testUser }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
 
             await isAccessError(update(payload, tid, {
                 collection: 'sites',
@@ -118,7 +109,7 @@ describe('Sites access',  () => {
         })
 
         test('not delete Sites', async ({ tid, testUser }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
 
             await isAccessError(del(payload, tid, {
                 collection: 'sites',
@@ -135,24 +126,24 @@ describe('Sites access',  () => {
                 collection: 'sites'
             }, testUser)
             expect(foundSites.docs).toHaveLength(1)
-            expect(foundSites.docs[0].id).toStrictEqual(getSiteId(testUser.sites[0].site))
+            expect(foundSites.docs[0].id).toStrictEqual(siteIdHelper(testUser.sites[0].site))
         })
 
         test('not read not-their Sites', async ({ tid, testUser, sites }) => {
             const notTheirSites = sites.filter(site => {
-                site.id !== getSiteId(testUser.sites[0].site)
+                site.id !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirSites.forEach(site => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(notTheirSites.map(async site => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'sites',
                     id: site.id
                 }, testUser))
-            })
+            }))
         })
 
         test('not write a Site', async ({ tid, testUser, sites }) => {
-            isAccessError(create(payload, tid, {
+            await isAccessError(create(payload, tid, {
                 collection: 'sites',
                 data: {
                     name: 'A New Site'
@@ -161,24 +152,24 @@ describe('Sites access',  () => {
         })
 
         test('not update Sites', async ({ tid, testUser, sites }) => {
-            sites.forEach(site => {
-                isAccessError(update(payload, tid, {
+            await Promise.all(sites.map(async site => {
+                return isAccessError(update(payload, tid, {
                     collection: 'sites',
                     id: site.id,
                     data: {
                         name: `${site.name} (Edited)`,
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not delete Sites', async ({ tid, testUser, sites }) => {
-            sites.forEach(site => {
-                isAccessError(del(payload, tid, {
+            await Promise.all(sites.map(async site => {
+                return isAccessError(del(payload, tid, {
                     collection: 'sites',
                     id: site.id
                 }, testUser))
-            })
+            }))
         })
     })
 })

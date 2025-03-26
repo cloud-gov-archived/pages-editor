@@ -1,12 +1,8 @@
 import { User, Site } from "@/payload-types";
 import { PayloadRequest } from "payload";
+import { siteIdHelper } from "@/utilities/idHelper";
 
 const siteKey = 'site-key'
-
-const siteIdHelper = (site: Site | number) => {
-  if (typeof site === 'number') return site
-  return site.id
-}
 
 //  we need to check against the "selected" site from user preferences
 // TODO: this will become easier after https://github.com/payloadcms/payload/pull/9511

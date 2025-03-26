@@ -2,17 +2,8 @@ import { expect, describe } from 'vitest'
 import { create, find, findByID, update, del } from '@test/utils/localHelpers';
 import { test } from '@test/utils/test';
 import { Site } from '@/payload-types';
-
-const isAccessError = async (fnCall) => {
-    return expect(fnCall)
-    .rejects
-    .toThrowError('You are not allowed to perform this action')
-}
-
-const getSiteId = (site: Site | number) => {
-    if (typeof site === 'number') return site
-    return site.id
-}
+import { siteIdHelper } from '@/utilities/idHelper';
+import { isAccessError } from '@test/utils/errors';
 
 describe('Users access',  () => {
     describe('admins can...', async () => {
@@ -80,7 +71,7 @@ describe('Users access',  () => {
         test.scoped({ defaultUserAdmin: false, defaultUserRole: 'manager' })
 
         test('read their Users', async ({ tid, testUser, users }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
             const foundUsers = await find(payload, tid, {
                 collection: 'users'
             }, testUser)
@@ -94,15 +85,15 @@ describe('Users access',  () => {
 
         test('not read not-their Users', async ({ tid, testUser, users }) => {
             const notTheirUsers = users.filter(user => {
-                getSiteId(user.sites[0].site) !== getSiteId(testUser.sites[0].site)
+                siteIdHelper(user.sites[0].site) !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirUsers.forEach(user => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(notTheirUsers.map(async user => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'users',
                     id: user.id
                 }, testUser))
-            })
+            }))
         })
 
         test('create a User for their site', async ({ tid, testUser }) => {
@@ -123,11 +114,11 @@ describe('Users access',  () => {
 
         test('not create a User for not-their site', async ({ tid, testUser, sites }) => {
             const notTheirSites= sites.filter(site => {
-                site.id !== getSiteId(testUser.sites[0].site)
+                site.id !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirSites.forEach(site => {
-                isAccessError(create(payload, tid, {
+            await Promise.all(notTheirSites.map(async site => {
+                return isAccessError(create(payload, tid, {
                     collection: 'users',
                     data: {
                         email: `newuser@${site.name}.gov`,
@@ -137,7 +128,7 @@ describe('Users access',  () => {
                         }],
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('update their Users', async ({ tid, testUser, users }) => {
@@ -170,8 +161,8 @@ describe('Users access',  () => {
                 return !theirUsers.map(u => u.id).includes(user.id)
             })
 
-            notTheirUsers.forEach(user => {
-                isAccessError(update(payload, tid, {
+            await Promise.all(notTheirUsers.map(async user => {
+                return isAccessError(update(payload, tid, {
                     collection: 'users',
                     id: user.id,
                     data: {
@@ -181,7 +172,7 @@ describe('Users access',  () => {
                         }],
                     }
                 }, testUser))
-            })
+            }))
         })
 
     //     test('delete their Users', async ({ tid, testUser, users }) => {
@@ -203,7 +194,7 @@ describe('Users access',  () => {
     //     })
 
     //     test('not delete not-their Users', async ({ tid, testUser, users }) => {
-    //         const siteId = getSiteId(testUser.sites[0].site)
+    //         const siteId = siteIdHelper(testUser.sites[0].site)
     //         const notTheirUsers = (await find(payload, tid, {
     //             collection: 'users',
     //             where: {
@@ -226,7 +217,7 @@ describe('Users access',  () => {
         test.scoped({ defaultUserAdmin: false, defaultUserRole: 'user' })
 
         test('read their Users', async ({ tid, testUser, users }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
             const foundUsers = await find(payload, tid, {
                 collection: 'users'
             }, testUser)
@@ -240,20 +231,20 @@ describe('Users access',  () => {
 
         test('not read not-their Users', async ({ tid, testUser, users }) => {
             const notTheirUsers = users.filter(user => {
-                getSiteId(user.sites[0].site) !== getSiteId(testUser.sites[0].site)
+                siteIdHelper(user.sites[0].site) !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirUsers.forEach(user => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(notTheirUsers.map(async user => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'users',
                     id: user.id
                 }, testUser))
-            })
+            }))
         })
 
         test('not create a User', async ({ tid, testUser, sites }) => {
-            sites.forEach(site => {
-                isAccessError(create(payload, tid, {
+            await Promise.all(sites.map(async site => {
+                return isAccessError(create(payload, tid, {
                     collection: 'users',
                     data: {
                         email: `newuser@${site.name}.gov`,
@@ -263,12 +254,12 @@ describe('Users access',  () => {
                         }],
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not update a User', async ({ tid, testUser, users }) => {
-            users.forEach(user => {
-                isAccessError(update(payload, tid, {
+            await Promise.all(users.map(async user => {
+                return isAccessError(update(payload, tid, {
                     collection: 'users',
                     id: user.id,
                     data: {
@@ -278,11 +269,11 @@ describe('Users access',  () => {
                         }],
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not delete a User', async ({ tid, testUser, users }) => {
-            return Promise.all(users.map(async user => {
+            await Promise.all(users.map(async user => {
                 return isAccessError(del(payload, tid, {
                     collection: 'users',
                     id: user.id
@@ -295,17 +286,17 @@ describe('Users access',  () => {
         test.scoped({ defaultUserAdmin: false, defaultUserRole: 'bot' })
 
         test('not read Users', async ({ tid, testUser, users }) => {
-            users.forEach(user => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(users.map(async user => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'users',
                     id: user.id
                 }, testUser))
-            })
+            }))
         })
 
         test('not create a User', async ({ tid, testUser, sites }) => {
-            sites.forEach(site => {
-                isAccessError(create(payload, tid, {
+            await Promise.all(sites.map(async site => {
+                return isAccessError(create(payload, tid, {
                     collection: 'users',
                     data: {
                         email: `newuser@${site.name}.gov`,
@@ -315,12 +306,12 @@ describe('Users access',  () => {
                         }],
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not update a User', async ({ tid, testUser, users }) => {
-            users.forEach(user => {
-                isAccessError(update(payload, tid, {
+            await Promise.all(users.map(async user => {
+                return isAccessError(update(payload, tid, {
                     collection: 'users',
                     id: user.id,
                     data: {
@@ -330,11 +321,11 @@ describe('Users access',  () => {
                         }],
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not delete a User', async ({ tid, testUser, users }) => {
-            return Promise.all(users.map(async user => {
+            await Promise.all(users.map(async user => {
                 return isAccessError(del(payload, tid, {
                     collection: 'users',
                     id: user.id

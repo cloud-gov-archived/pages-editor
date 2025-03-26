@@ -1,5 +1,6 @@
 import { User, Site } from "@/payload-types"
 import { BasePayload, CollectionSlug, PayloadRequest, SelectType } from "payload"
+import { siteIdHelper } from "@/utilities/idHelper"
 import type { Options as CreateOptions } from "node_modules/payload/dist/collections/operations/local/create"
 import type { Options as FindOptions } from "node_modules/payload/dist/collections/operations/local/find"
 import type { Options as FindByIdOptions } from "node_modules/payload/dist/collections/operations/local/findByID"
@@ -87,11 +88,6 @@ export async function del<TSlug extends CollectionSlug, TSelect extends SelectTy
   }
 
   return payload.delete(localOptions)
-}
-
-const siteIdHelper = (site: Site | number) => {
-  if (typeof site === 'number') return site
-  return site.id
 }
 
 export async function setUserSite(

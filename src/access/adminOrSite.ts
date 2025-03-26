@@ -1,15 +1,11 @@
 import type { Access, CollectionSlug, Where } from 'payload'
 import type { Post, Page, User, Site } from '@/payload-types'
 import { getSiteId } from './preferenceHelper'
+import { siteIdHelper } from '@/utilities/idHelper'
 
 // ideally this code could be handled via a single generic but
 // certain access operations don't pass `data` which is the only
 // way to infer the shape of the documents we're operating on
-
-const siteIdHelper = (site: Site | number) => {
-  if (typeof site === 'number') return site
-  return site.id
-}
 
 type Role = User["sites"][number]["role"]
 

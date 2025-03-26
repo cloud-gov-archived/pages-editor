@@ -2,17 +2,8 @@ import { expect, describe } from 'vitest'
 import { create, find, findByID, update, del } from '@test/utils/localHelpers';
 import { test } from '@test/utils/test';
 import { Site } from '@/payload-types';
-
-const isAccessError = (fnCall) => {
-    expect(fnCall)
-    .rejects
-    .toThrowError('You are not allowed to perform this action')
-}
-
-const getSiteId = (site: Site | number) => {
-    if (typeof site === 'number') return site
-    return site.id
-}
+import { siteIdHelper } from '@/utilities/idHelper';
+import { isAccessError } from '@test/utils/errors';
 
 describe('Pages access',  () => {
     describe('admins can...', async () => {
@@ -87,15 +78,15 @@ describe('Pages access',  () => {
 
         test('not read not-their Pages', async ({ tid, testUser, pages }) => {
             const notTheirPages = pages.filter(page => {
-                getSiteId(page.site) !== getSiteId(testUser.sites[0].site)
+                siteIdHelper(page.site) !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirPages.forEach(page => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(notTheirPages.map(async page => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'pages',
                     id: page.id
                 }, testUser))
-            })
+            }))
         })
 
         test('write a Page to their site', async ({ tid, testUser }) => {
@@ -113,18 +104,18 @@ describe('Pages access',  () => {
 
         test('not write a Page to not-their site', async ({ tid, testUser, sites }) => {
             const notTheirSites= sites.filter(site => {
-                site.id !== getSiteId(testUser.sites[0].site)
+                site.id !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirSites.forEach(site => {
-                isAccessError(create(payload, tid, {
+            await Promise.all(notTheirSites.map(async site => {
+                return isAccessError(create(payload, tid, {
                     collection: 'pages',
                     data: {
                         title: `${site.name} - Title`,
                         site,
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('update their Pages', async ({ tid, testUser, pages }) => {
@@ -148,7 +139,7 @@ describe('Pages access',  () => {
         })
 
         test('not update not-their Pages', async ({ tid, testUser, pages }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
             const notTheirPages = (await find(payload, tid, {
                 collection: 'pages',
                 where: {
@@ -158,15 +149,15 @@ describe('Pages access',  () => {
                 }
             }, testUser)).docs
 
-            notTheirPages.forEach(page => {
-                isAccessError(update(payload, tid, {
+            await Promise.all(notTheirPages.map(async page => {
+                return isAccessError(update(payload, tid, {
                     collection: 'pages',
                     id: page.id,
                     data: {
                         title: `${page.title} (Edited)`,
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('delete their Pages', async ({ tid, testUser, pages }) => {
@@ -188,7 +179,7 @@ describe('Pages access',  () => {
         })
 
         test('not delete not-their Pages', async ({ tid, testUser, pages }) => {
-            const siteId = getSiteId(testUser.sites[0].site)
+            const siteId = siteIdHelper(testUser.sites[0].site)
             const notTheirPages = (await find(payload, tid, {
                 collection: 'pages',
                 where: {
@@ -198,12 +189,12 @@ describe('Pages access',  () => {
                 }
             }, testUser)).docs
 
-            notTheirPages.forEach(page => {
-                isAccessError(del(payload, tid, {
+            await Promise.all(notTheirPages.map(async page => {
+                return isAccessError(del(payload, tid, {
                     collection: 'pages',
                     id: page.id
                 }, testUser))
-            })
+            }))
         })
     })
 
@@ -215,53 +206,53 @@ describe('Pages access',  () => {
                 collection: 'pages'
             }, testUser)
             expect(foundPages.docs).toHaveLength(1)
-            expect(getSiteId(foundPages.docs[0].site)).toStrictEqual(getSiteId(testUser.sites[0].site))
+            expect(siteIdHelper(foundPages.docs[0].site)).toStrictEqual(siteIdHelper(testUser.sites[0].site))
         })
 
         test('not read not-their Pages', async ({ tid, testUser, pages }) => {
             const notTheirPages = pages.filter(page => {
-                getSiteId(page.site) !== getSiteId(testUser.sites[0].site)
+                siteIdHelper(page.site) !== siteIdHelper(testUser.sites[0].site)
             })
 
-            notTheirPages.forEach(page => {
-                isAccessError(findByID(payload, tid, {
+            await Promise.all(notTheirPages.map(async page => {
+                return isAccessError(findByID(payload, tid, {
                     collection: 'pages',
                     id: page.id
                 }, testUser))
-            })
+            }))
         })
 
         test('not write a Page', async ({ tid, testUser, sites }) => {
-            sites.forEach(site => {
-                isAccessError(create(payload, tid, {
+            await Promise.all(sites.map(async site => {
+                return isAccessError(create(payload, tid, {
                     collection: 'pages',
                     data: {
                         title: `${site.name} - Title`,
                         site,
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not update Pages', async ({ tid, testUser, pages }) => {
-            pages.forEach(page => {
-                isAccessError(update(payload, tid, {
+            await Promise.all(pages.map(async page => {
+                return isAccessError(update(payload, tid, {
                     collection: 'pages',
                     id: page.id,
                     data: {
                         title: `${page.title} (Edited)`,
                     }
                 }, testUser))
-            })
+            }))
         })
 
         test('not delete Pages', async ({ tid, testUser, pages }) => {
-            pages.forEach(page => {
-                isAccessError(del(payload, tid, {
+            await Promise.all(pages.map(async page => {
+                return isAccessError(del(payload, tid, {
                     collection: 'pages',
                     id: page.id
                 }, testUser))
-            })
+            }))
         })
     })
 })
