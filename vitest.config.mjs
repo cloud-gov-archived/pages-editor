@@ -7,9 +7,9 @@ export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
     globals: true,
+    fileParallelism: false,
     environment: 'node',
     passWithNoTests: true,
-    // include: ['src/collections/Sites/*.test.ts'],
     include: ['src/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**', '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*'],
     setupFiles: ['test/utils/init.ts'],

@@ -1,7 +1,6 @@
 import { test as vitest } from 'vitest'
 import type { LocalTestContext } from './context.types'
 import { create, find, setUserSite } from './localHelpers';
-import type { Site } from '@/payload-types';
 
 export const test = vitest.extend<LocalTestContext>({
     tid: async ({ payload }, use) => {
@@ -51,7 +50,7 @@ export const test = vitest.extend<LocalTestContext>({
         }))
         await use(posts)
     },
-    users: async({ payload, tid, sites}, use) => {
+    users: async({ payload, tid, sites }, use) => {
         // site creation creates bot users, find them and include them
         // in the fixture
         const bots = (await find(payload, tid, {

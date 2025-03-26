@@ -73,7 +73,7 @@ const testEmailUniqueness: FieldHook<User> = async({
         collection: 'users',
         id: existingUser.id,
         data: {
-          sites: data.sites.concat(existingUser.sites)
+          sites: [...data.sites, ...existingUser.sites]
         }
       })
       return false
@@ -87,7 +87,7 @@ export const Users: CollectionConfig = {
   access: {
     read: getAdminOrSiteUser('users'),
     update: getAdminOrSiteUser('users', ['manager']),
-    delete: getAdminOrSiteUser('users', ['manager']),
+    delete: admin,
     create: getAdminOrSiteUser('users', ['manager']),
   },
   admin: {
@@ -110,9 +110,7 @@ export const Users: CollectionConfig = {
       type: 'email',
       required: true,
       access: {
-        // read: adminField,
-        // create: adminField, // TODO: update to admin/sitemanager
-        // update: adminField,
+        update: adminField,
       },
       hooks: {
         beforeValidate: [testEmailUniqueness]
@@ -124,8 +122,6 @@ export const Users: CollectionConfig = {
       required: true,
       saveToJWT: true,
       access: {
-        read: adminField,
-        create: adminField, // TODO: update to admin/sitemanager
         update: adminField,
       },
       admin: {
@@ -157,6 +153,9 @@ export const Users: CollectionConfig = {
           required: true,
           index: true,
           saveToJWT: true,
+          admin: {
+            condition: (_a, _b, { user }) => Boolean(user?.isAdmin)
+          },
           access: {
             // read: adminField,
             // create: adminField,
@@ -176,6 +175,11 @@ export const Users: CollectionConfig = {
       name: 'isAdmin',
       type: 'checkbox',
       defaultValue: false,
+      access: {
+        read: adminField,
+        create: () => false,
+        update: () => false,
+      },
       admin: {
         hidden: true,
         readOnly: true,

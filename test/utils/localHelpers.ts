@@ -105,6 +105,20 @@ export async function setUserSite(
       req = { ...req, transactionID: tid }
     }
 
+    const pref = await getUserSitePreference(payload, tid, user)
+    const siteId = siteIdHelper(site)
+
+    if (pref) {
+      return payload.update({
+        collection: 'payload-preferences',
+        id: pref.id,
+        data: {
+          value: siteId
+        },
+        req
+      })
+    }
+
     return payload.create({
         collection: 'payload-preferences',
         data: {
@@ -113,8 +127,49 @@ export async function setUserSite(
             relationTo: 'users',
             value: user.id
           },
-          value: siteIdHelper(site)
+          value: siteId
         },
         req
       })
+}
+
+export async function getUserSitePreference(
+  payload: BasePayload,
+  tid: string | number,
+  user: User,
+) {
+
+  let req: Partial<PayloadRequest> = {
+    user: { ...user, collection: 'users' }
+  }
+
+  if (tid) {
+    req = { ...req, transactionID: tid }
+  }
+
+    const pref = await payload.find({
+      collection: 'payload-preferences',
+      limit: 1,
+      where: {
+        and: [
+          {
+            key: {
+              equals: siteKey,
+            },
+          },
+          {
+            'user.relationTo': {
+              equals: 'users',
+            },
+          },
+          {
+            'user.value': {
+              equals: user.id,
+            },
+          },
+        ],
+      },
+      req
+    })
+    return pref.docs[0]
 }

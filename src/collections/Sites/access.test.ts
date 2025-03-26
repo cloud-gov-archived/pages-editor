@@ -118,6 +118,41 @@ describe('Sites access',  () => {
         })
     })
 
+    describe('site users with multiple sites can...', async () => {
+        test.scoped({ defaultUserAdmin: false, defaultUserRole: 'user' })
+
+        const addSiteToUser = async (user, tid, site) => {
+            return update(payload, tid, {
+                collection: 'users',
+                id: user.id,
+                data: {
+                    sites: [...user.sites, site]
+                }
+            })
+        }
+
+        test('read all their Sites, upon site selection', async ({ tid, testUser, sites }) => {
+            testUser = await addSiteToUser(testUser, tid, { site: sites[1], role: 'user'})
+
+            let foundSites = await find(payload, tid, {
+                collection: 'sites'
+            }, testUser)
+
+            expect(foundSites.docs).toHaveLength(1)
+            expect(foundSites.docs[0].id).toBe(sites[0].id)
+
+            // switch site
+            const pref = await setUserSite(payload, tid, testUser, sites[1])
+
+            foundSites = await find(payload, tid, {
+                collection: 'sites'
+            }, testUser)
+
+            expect(foundSites.docs).toHaveLength(1)
+            expect(foundSites.docs[0].id).toBe(sites[1].id)
+        })
+    })
+
     describe('bots can...', async () => {
         test.scoped({ defaultUserAdmin: false, defaultUserRole: 'bot' })
 
