@@ -1,6 +1,5 @@
 import type { Access, CollectionSlug, Where } from 'payload'
 import type { Post, Page, User, Site } from '@/payload-types'
-import { getSiteId } from './preferenceHelper'
 import { siteIdHelper } from '@/utilities/idHelper'
 
 // ideally this code could be handled via a single generic but
@@ -11,12 +10,14 @@ type Role = User["sites"][number]["role"]
 
 export function getAdminOrSiteUser(slug: CollectionSlug, requiredRole: Role[] = ['manager', 'user']) {
   const adminOrSiteUser: Access<Post | Page | User | Site > = async ({ req, data }) => {
-    const { user, payload } = req;
+    const { payload } = req;
+    let { user } = req;
     if (!user) return false
     if (user.isAdmin) return true
 
-    const siteId = await getSiteId(req, user.id)
+    const siteId = user.selectedSiteId
     if (!siteId) return false
+
     const matchedSite = user.sites.find(site => siteIdHelper(site.site) === siteId)
     if (!(matchedSite && requiredRole.includes(matchedSite.role))) return false
 

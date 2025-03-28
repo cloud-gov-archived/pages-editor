@@ -70,10 +70,11 @@ describe('Posts access',  () => {
         test.scoped({ defaultUserAdmin: false })
 
         test('read their Posts', async ({ tid, testUser, posts }) => {
+            const siteId = siteIdHelper(testUser.sites[0].site)
             const foundPosts = await find(payload, tid, {
                 collection: 'posts'
             }, testUser)
-            expect(foundPosts.docs).toHaveLength(posts.filter(siteid).length)
+            expect(foundPosts.docs).toHaveLength(posts.filter(post => siteIdHelper(post.site) === siteId).length)
             expect(foundPosts.docs[0].site).toStrictEqual(testUser.sites[0].site)
         })
 

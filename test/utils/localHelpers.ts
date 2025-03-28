@@ -7,8 +7,6 @@ import type { Options as FindByIdOptions } from "node_modules/payload/dist/colle
 import type { ByIDOptions as UpdateOptions } from "node_modules/payload/dist/collections/operations/local/update"
 import type { ByIDOptions as DeleteOptions } from "node_modules/payload/dist/collections/operations/local/delete"
 
-const siteKey = 'site-key'
-
 // TODO: generalize these functions for other local methods; it's hard to type
 export async function create<TSlug extends CollectionSlug, TSelect extends SelectType>(
     payload: BasePayload,
@@ -88,88 +86,4 @@ export async function del<TSlug extends CollectionSlug, TSelect extends SelectTy
   }
 
   return payload.delete(localOptions)
-}
-
-export async function setUserSite(
-    payload: BasePayload,
-    tid: string | number,
-    user: User,
-    site: Site | number,
-) {
-
-    let req: Partial<PayloadRequest> = {
-      user: { ...user, collection: 'users' }
-    }
-
-    if (tid) {
-      req = { ...req, transactionID: tid }
-    }
-
-    const pref = await getUserSitePreference(payload, tid, user)
-    const siteId = siteIdHelper(site)
-
-    if (pref) {
-      return payload.update({
-        collection: 'payload-preferences',
-        id: pref.id,
-        data: {
-          value: siteId
-        },
-        req
-      })
-    }
-
-    return payload.create({
-        collection: 'payload-preferences',
-        data: {
-          key: siteKey,
-          user: {
-            relationTo: 'users',
-            value: user.id
-          },
-          value: siteId
-        },
-        req
-      })
-}
-
-export async function getUserSitePreference(
-  payload: BasePayload,
-  tid: string | number,
-  user: User,
-) {
-
-  let req: Partial<PayloadRequest> = {
-    user: { ...user, collection: 'users' }
-  }
-
-  if (tid) {
-    req = { ...req, transactionID: tid }
-  }
-
-    const pref = await payload.find({
-      collection: 'payload-preferences',
-      limit: 1,
-      where: {
-        and: [
-          {
-            key: {
-              equals: siteKey,
-            },
-          },
-          {
-            'user.relationTo': {
-              equals: 'users',
-            },
-          },
-          {
-            'user.value': {
-              equals: user.id,
-            },
-          },
-        ],
-      },
-      req
-    })
-    return pref.docs[0]
 }
