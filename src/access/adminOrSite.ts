@@ -6,7 +6,8 @@ import { siteIdHelper } from '@/utilities/idHelper'
 // certain access operations don't pass `data` which is the only
 // way to infer the shape of the documents we're operating on
 
-type Role = User["sites"][number]["role"]
+// type Role = User["sites"][number]["role"]
+type Role = 'manager' | 'user' | 'bot'
 
 export function getAdminOrSiteUser(slug: CollectionSlug, requiredRole: Role[] = ['manager', 'user']) {
   const adminOrSiteUser: Access<Post | Page | User | Site > = async ({ req, data }) => {
@@ -18,7 +19,7 @@ export function getAdminOrSiteUser(slug: CollectionSlug, requiredRole: Role[] = 
     const siteId = user.selectedSiteId
     if (!siteId) return false
 
-    const matchedSite = user.sites.find(site => siteIdHelper(site.site) === siteId)
+    const matchedSite = user.sites?.find(site => siteIdHelper(site.site) === siteId)
     if (!(matchedSite && requiredRole.includes(matchedSite.role))) return false
 
     // if collection data exists, extract the site id and match against it
@@ -33,7 +34,7 @@ export function getAdminOrSiteUser(slug: CollectionSlug, requiredRole: Role[] = 
         if (siteId !== dataSiteId) return false
 
       } else if ('sites' in data) {
-        const dataSiteIds = data.sites.map(site => typeof site.site === 'number' ? site.site : site.site.id)
+        const dataSiteIds = data.sites?.map(site => siteIdHelper(site.site))
         if (!(dataSiteIds && dataSiteIds.includes(siteId))) return false
 
       } else if ('id' in data){

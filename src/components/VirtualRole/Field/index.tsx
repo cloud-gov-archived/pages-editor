@@ -6,8 +6,7 @@ const VirtualRoleField = () => {
   const { getData } = useForm()
   const { user } = useAuth()
   const data = getData()
-  if (!user) return ''
-  // TODO if user.isAdmin
+  if (!user || user.isAdmin) return ''
   return (
     <div className="field-type email read-only" style={{ flex: '1 1 auto' }}>
       <label className="field-label " htmlFor="field-role">Role</label>

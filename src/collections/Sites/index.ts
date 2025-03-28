@@ -12,7 +12,7 @@ const createSiteBot: CollectionAfterChangeHook<Site> = async ({
     const bot = await payload.create({
       collection: 'users',
       data: {
-        email: `cloud-gov-pages-operations+${doc.name}@gsa.gov`,
+        email: `cloud-gov-pages-operations+${doc.id}@gsa.gov`,
         sites: [
           {
             site: doc.id,

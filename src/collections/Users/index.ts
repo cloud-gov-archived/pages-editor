@@ -33,7 +33,6 @@ const testEmailUniqueness: FieldHook<User> = async({
   data, originalDoc, req, value, operation
 }) => {
   const { payload, user } = req
-  console.log('after change called')
   if (operation === 'create' || operation == 'update') {
     // if value is unchanged, skip validation
     if (originalDoc?.email === value) {
@@ -147,7 +146,7 @@ export const Users: CollectionConfig = {
         },
         disableListColumn: true,
         disableListFilter: true,
-        condition: (data, _b, ctx) => {
+        condition: (data, _, ctx) => {
           return Boolean(ctx.user?.isAdmin) || data.sites.length > 1
         }
       },
@@ -157,10 +156,8 @@ export const Users: CollectionConfig = {
         // admin.condition functions and we can variably display things based on that
         // although it feels unreliable :(
         afterRead: [async ({ value, req }) => {
-          console.log('after read', req.pathname, Boolean(req.user))
-          if (!req.user || req.user.isAdmin || ['/admin/account', '/'].includes(req.pathname)) return value
+          if (!req.user || req.user.isAdmin || ['/admin/account', '/api/users/me'].includes(req.pathname)) return value
           const siteId = req.user.selectedSiteId
-          console.log(siteId)
           if (!siteId) return value
           return value.filter(v => v.site === siteId)
         }]
@@ -173,17 +170,6 @@ export const Users: CollectionConfig = {
           required: true,
           index: true,
           saveToJWT: true,
-          admin: {
-            condition: (_, value, ctx) => {
-              console.log(value)
-              return Boolean(ctx.user?.isAdmin) || value.length > 1
-            }
-          },
-          access: {
-            // read: adminField,
-            // create: adminField,
-            // update: adminField,
-          }
         },
         {
           name: 'role',
@@ -213,10 +199,7 @@ export const Users: CollectionConfig = {
     {
       name: 'selectedSiteId',
       type: 'number',
-      access: {
-        create: () => false,
-        update: () => false,
-      },
+      required: true,
       admin: {
         hidden: true,
         readOnly: true,
@@ -228,7 +211,7 @@ export const Users: CollectionConfig = {
       name: 'role',
       type: 'ui',
       admin: {
-        condition: (_a, _b, ctx) => Boolean(ctx.user && !ctx.user.isAdmin),
+        // condition: (_a, _b, ctx) => Boolean(ctx.user && !ctx.user.isAdmin),
         components: {
           Field: '@/components/VirtualRole/Field',
           Cell: '@/components/VirtualRole/Cell',

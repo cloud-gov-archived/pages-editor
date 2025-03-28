@@ -225,13 +225,13 @@ export interface User {
   sub?: string | null;
   sites?:
     | {
-        site?: (number | null) | Site;
+        site: number | Site;
         role: 'manager' | 'user' | 'bot';
         id?: string | null;
       }[]
     | null;
   isAdmin?: boolean | null;
-  selectedSiteId?: number | null;
+  selectedSiteId: number;
   updatedAt: string;
   createdAt: string;
   enableAPIKey?: boolean | null;

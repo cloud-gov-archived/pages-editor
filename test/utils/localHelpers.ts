@@ -1,6 +1,5 @@
-import { User, Site } from "@/payload-types"
+import { User } from "@/payload-types"
 import { BasePayload, CollectionSlug, PayloadRequest, SelectType } from "payload"
-import { siteIdHelper } from "@/utilities/idHelper"
 import type { Options as CreateOptions } from "node_modules/payload/dist/collections/operations/local/create"
 import type { Options as FindOptions } from "node_modules/payload/dist/collections/operations/local/find"
 import type { Options as FindByIdOptions } from "node_modules/payload/dist/collections/operations/local/findByID"
@@ -37,7 +36,7 @@ export async function find<TSlug extends CollectionSlug, TSelect extends SelectT
         localOptions = { ...localOptions, overrideAccess: false, user }
     }
 
-  return payload.find(localOptions)
+    return payload.find(localOptions)
 }
 
 export async function findByID<TSlug extends CollectionSlug, TDisableErrors extends boolean, TSelect extends SelectType>(
@@ -86,4 +85,22 @@ export async function del<TSlug extends CollectionSlug, TSelect extends SelectTy
   }
 
   return payload.delete(localOptions)
+}
+
+export async function setUserSite(
+  payload: BasePayload,
+  tid: string | number | undefined,
+  user: User,
+  selectedSiteId: number
+) {
+  return payload.update({
+    collection: 'users',
+    id: user.id,
+    data: {
+      selectedSiteId
+    },
+    req: {
+      transactionID: tid
+    }
+  })
 }

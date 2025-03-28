@@ -13,6 +13,7 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**', '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*'],
     setupFiles: ['test/utils/init.ts'],
+    // globalSetup: ['test/utils/globalSetup.ts'],
     // env: loadEnv('test', process.cwd(), ''),
     sequence: {
       hooks: 'stack'
