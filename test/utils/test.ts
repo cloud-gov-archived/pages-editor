@@ -8,13 +8,12 @@ export const test = vitest.extend<LocalTestContext>({
         if (!tid) throw new Error('no transaction')
         await use(tid)
         await payload.db.rollbackTransaction(tid)
-
     },
     defaultUserRole: 'user',
     defaultUserAdmin: false,
     siteNames: ['site1', 'site2', 'site3'],
     sites: [async({ payload, tid, siteNames }, use) => {
-            const sites = await Promise.all(siteNames.map(name => {
+            const sites = await Promise.all(siteNames.map(async name => {
                 return create(payload, tid, {
                     collection: 'sites',
                     data: {
