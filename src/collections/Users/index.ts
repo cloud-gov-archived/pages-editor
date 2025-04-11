@@ -36,7 +36,7 @@ export const Users: CollectionConfig = {
     tokenExpiration: 86400, // one day
     cookies: {
       domain: process.env.COOKIE_DOMAIN,
-      secure: !process.env.ORIGIN?.includes('http://localhost')
+      secure: !process.env.PUBLIC_URL?.includes('http://localhost')
     }
   },
   fields: [

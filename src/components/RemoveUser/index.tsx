@@ -16,7 +16,7 @@ const RemoveUser = () => {
   if (!isRoleForSelectedSite(user, ['manager'])) return null
 
   const removeUser = async function () {
-    await fetch(`${process.env.ORIGIN}/api/removeUser`, {
+    await fetch(`${process.env.PUBLIC_URL}/api/removeUser`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, siteId })
