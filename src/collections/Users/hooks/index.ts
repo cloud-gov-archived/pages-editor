@@ -112,7 +112,7 @@ export const ensureSites: CollectionBeforeOperationHook = async ({
 }
 
 export const testEmailUniqueness: CollectionBeforeChangeHook<User> = async({
-  data, originalDoc, req, operation
+  data, originalDoc, req, operation, context
 }) => {
   const { payload, user } = req
   if (!data.email) return data
@@ -160,9 +160,10 @@ export const testEmailUniqueness: CollectionBeforeChangeHook<User> = async({
       // if the user exists but on another site:
       //  - pass data to create a new dummy user (so this operation "succeeds")
       //  - update the existing user
+      //  - save the updated user in context for final redirect
       }
 
-      const update = await payload.update({
+      const updatedUser = await payload.update({
         collection: 'users',
         id: existingUser.id,
         data: {
@@ -170,6 +171,8 @@ export const testEmailUniqueness: CollectionBeforeChangeHook<User> = async({
         },
         req: partialReq
       })
+
+      context.updatedUser = updatedUser
 
       data.email = `${req.transactionID}@toberemoved.gov`
       data.sites = (data.sites ?? []).map(site => ({ ...site, id: 'temp' }))
@@ -179,14 +182,17 @@ export const testEmailUniqueness: CollectionBeforeChangeHook<User> = async({
 }
 
 export const removeDummyUsers: CollectionAfterChangeHook<User> = async ({
-  doc, req,
+  doc, req, context
 }) => {
   if (doc.email.includes('toberemoved')) {
-    return req.payload.delete({
+    await req.payload.delete({
       collection: 'users',
       id: doc.id,
       req
     })
+    if (context.updatedUser) {
+      return context.updatedUser
+    }
   }
   return doc
 }
