@@ -27,8 +27,9 @@ function deDepulicateSites (sites) {
 }
 
 export const userEmail: CollectionAfterChangeHook<User> = async ({
-  doc, req: { payload }, operation
+  doc, req, operation
 }) => {
+  const { payload } = req
   if (operation === 'create') {
     // email the user
     // TODO: mock a local endpoint
@@ -36,7 +37,8 @@ export const userEmail: CollectionAfterChangeHook<User> = async ({
       // get the site they are invited to, assume it's the first
       const site = await payload.findByID({
         collection: 'sites',
-        id: siteIdHelper(doc.sites[0].site)
+        id: siteIdHelper(doc.sites[0].site),
+        req
       })
 
       await fetch(`${process.env.EMAIL_HOST}/send`, {
