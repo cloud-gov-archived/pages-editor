@@ -179,6 +179,7 @@ export interface Site {
   name: string;
   initialManagerEmail: string;
   pagesOrg?: string | null;
+  pagesSiteId?: number | null;
   users?: {
     docs?: (number | User)[];
     hasNextPage?: boolean;
@@ -868,6 +869,7 @@ export interface SitesSelect<T extends boolean = true> {
   name?: T;
   initialManagerEmail?: T;
   pagesOrg?: T;
+  pagesSiteId?: T;
   users?: T;
   updatedAt?: T;
   createdAt?: T;
